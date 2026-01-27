@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python ML Maintenance Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+        }
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+        }
+        .status-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .python-badge {
+            background: linear-gradient(45deg, #3776ab, #ffde57);
+            color: #333;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-robot text-primary"></i>
+                        Python ML Maintenance Prediction
+                        <span class="python-badge ms-2">🐍 Python Only</span>
+                    </h1>
+                                         <div class="btn-group">
+                         <button class="btn btn-outline-primary" onclick="checkServerStatus()">
+                             <i class="fas fa-server"></i> Check Server
+                         </button>
+                         <button class="btn btn-outline-success" onclick="window.open('http://localhost:8080/status', '_blank')">
+                             <i class="fas fa-external-link-alt"></i> API Status
+                         </button>
+                         <button class="btn btn-outline-warning" onclick="testAPI()">
+                             <i class="fas fa-bug"></i> Test API
+                         </button>
+                     </div>
+                </div>
+
+                <!-- Server Status -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card status-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-server fa-2x mb-2"></i>
+                                <h5 class="card-title">Server Status</h5>
+                                <h3 id="serverStatus">Checking...</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card status-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-brain fa-2x mb-2"></i>
+                                <h5 class="card-title">Model Status</h5>
+                                <h3 id="modelStatus">Unknown</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card status-card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-chart-line fa-2x mb-2"></i>
+                                <h5 class="card-title">Accuracy</h5>
+                                <h3 id="modelAccuracy">-</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ML Operations -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-cogs"></i>
+                                    Train ML Model
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">
+                                    The Python ML model automatically trains when the page loads.
+                                </p>
+                                
+                                <div class="alert alert-success">
+                                    <i class="fas fa-magic"></i>
+                                    <strong>Auto-Training Features:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>✅ Automatically trains on page load</li>
+                                        <li>✅ Real-time model training and prediction</li>
+                                        <li>✅ Automatic feature engineering</li>
+                                        <li>✅ No PHP dependency - pure Python!</li>
+                                    </ul>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary btn-lg" id="trainBtn" onclick="trainModel()">
+                                        <i class="fas fa-play"></i>
+                                        Train Python ML Model
+                                    </button>
+                                </div>
+                                
+                                <div class="alert alert-light mt-3">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Note:</strong> The model will auto-train in 2 seconds after page load.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-table"></i>
+                                    Vehicle Predictions
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">
+                                    View maintenance predictions for all vehicles. Urgency levels: CRITICAL (Red), HIGH (Yellow), MEDIUM (Blue), LOW (Green).
+                                </p>
+                                
+                                <div class="d-grid gap-2 mb-3">
+                                    <button class="btn btn-success" id="predictAllBtn" onclick="predictAllVehicles()">
+                                        <i class="fas fa-sync-alt"></i>
+                                        Refresh All Predictions
+                                    </button>
+                                </div>
+
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-striped table-hover" id="vehiclesTable">
+                                        <thead class="table-dark sticky-top">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Vehicle</th>
+                                                <th>Plate</th>
+                                                <th>Urgency</th>
+                                                <th>Days Until</th>
+                                                <th>Next Date</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="vehiclesTableBody">
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted">
+                                                    <i class="fas fa-spinner fa-spin"></i> Loading vehicles...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="row mt-4" id="resultsSection" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-bar"></i>
+                                    Results
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="resultsContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Endpoints -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-code"></i>
+                                    Python ML API Endpoints
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Training</h6>
+                                        <code>POST http://localhost:8080/train</code><br>
+                                        <small class="text-muted">Auto-trains on page load</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Single Prediction</h6>
+                                        <code>GET http://localhost:8080/predict?vehicle_id=1</code>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <h6>All Predictions</h6>
+                                        <code>GET http://localhost:8080/predict_all</code><br>
+                                        <small class="text-muted">Returns table data</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Status</h6>
+                                        <code>GET http://localhost:8080/status</code>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <h6>Start Server</h6>
+                                        <code>python ml_models/python_ml_server.py</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const PYTHON_SERVER_URL = 'https://endpoint-smarttrack-ec777ab9bb50.herokuapp.com';
+        
+        // Check server status and auto-train on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServerStatus();
+            // Auto-train model after a short delay
+            setTimeout(autoTrainModel, 2000);
+        });
+        
+        function checkServerStatus() {
+            fetch(`${PYTHON_SERVER_URL}/status`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('serverStatus').innerHTML = '<span class="text-success">✅ Online</span>';
+                        document.getElementById('modelStatus').innerHTML = data.data.model_trained ? 
+                            '<span class="text-success">✅ Trained</span>' : 
+                            '<span class="text-warning">⚠️ Not Trained</span>';
+                    } else {
+                        document.getElementById('serverStatus').innerHTML = '<span class="text-danger">❌ Offline</span>';
+                        document.getElementById('modelStatus').innerHTML = '<span class="text-muted">Unknown</span>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('serverStatus').innerHTML = '<span class="text-danger">❌ Offline</span>';
+                    document.getElementById('modelStatus').innerHTML = '<span class="text-muted">Unknown</span>';
+                    console.error('Server not running:', error);
+                });
+        }
+        
+        function trainModel() {
+            const btn = document.getElementById('trainBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Training...';
+            
+            fetch(`${PYTHON_SERVER_URL}/train`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play"></i> Train Python ML Model';
+                    
+                    if (data.success) {
+                        showResults('Training Successful!', `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Python ML Model Trained Successfully!</strong>
+                            </div>
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="border rounded p-3">
+                                        <i class="fas fa-chart-line fa-2x text-primary mb-2"></i>
+                                        <h4>${data.training_stats.accuracy}%</h4>
+                                        <p class="text-muted">Accuracy</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border rounded p-3">
+                                        <i class="fas fa-clock fa-2x text-success mb-2"></i>
+                                        <h4>${data.training_stats.training_time}</h4>
+                                        <p class="text-muted">Training Time</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border rounded p-3">
+                                        <i class="fas fa-database fa-2x text-info mb-2"></i>
+                                        <h4>${data.training_stats.samples_used}</h4>
+                                        <p class="text-muted">Samples Used</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="border rounded p-3">
+                                        <i class="fas fa-robot fa-2x text-warning mb-2"></i>
+                                        <h4>Random Forest</h4>
+                                        <p class="text-muted">Algorithm</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Model Details:</strong><br>
+                                • R² Score: ${data.training_stats.r2_score}<br>
+                                • RMSE: ${data.training_stats.rmse} days<br>
+                                • Method: ${data.method}
+                            </div>
+                        `);
+                        
+                        // Update accuracy display
+                        document.getElementById('modelAccuracy').textContent = data.training_stats.accuracy + '%';
+                        document.getElementById('modelStatus').innerHTML = '<span class="text-success">✅ Trained</span>';
+                        
+                    } else {
+                        showResults('Training Failed', `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Training Failed:</strong> ${data.message}
+                            </div>
+                        `);
+                    }
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play"></i> Train Python ML Model';
+                    showResults('Error', `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Server Error:</strong> Make sure the Python ML server is running on port 8080.
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>To start the server:</strong><br>
+                            1. Open Command Prompt<br>
+                            2. Navigate to your project folder<br>
+                            3. Run: <code>python ml_models/python_ml_server.py</code>
+                        </div>
+                    `);
+                });
+        }
+        
+        function predictVehicle() {
+            const vehicleId = document.getElementById('vehicleId').value;
+            if (!vehicleId) {
+                alert('Please enter a vehicle ID');
+                return;
+            }
+            
+            const btn = document.getElementById('predictBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+            
+            fetch(`${PYTHON_SERVER_URL}/predict?vehicle_id=${vehicleId}`)
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-search"></i> Predict Maintenance';
+                    
+                    if (data.success) {
+                        const pred = data.data;
+                        showResults('Prediction Results', `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Prediction Successful!</strong>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Vehicle Information</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>ID:</strong> ${pred.vehicle_id}</li>
+                                        <li><strong>Name:</strong> ${pred.vehicle_name}</li>
+                                        <li><strong>Plate:</strong> ${pred.plate_number}</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Maintenance Prediction</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Urgency:</strong> <span class="badge bg-${getUrgencyColor(pred.urgency_level || pred.status)}">${pred.urgency_level || pred.status || 'N/A'}</span></li>
+                                        <li><strong>Days Until:</strong> ${pred.days_until_maintenance}</li>
+                                        <li><strong>Next Date:</strong> ${pred.next_maintenance_date}</li>
+                                        <li><strong>Confidence:</strong> ${pred.confidence}%</li>
+                                    </ul>
+                                </div>
+                            </div>
+                                                         <div class="alert alert-info">
+                                 <i class="fas fa-tools"></i>
+                                 <strong>Recommended Maintenance:</strong> ${pred.recommended_maintenance || 'CHANGE OIL'}
+                             </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h6>Factors Considered</h6>
+                                                                         <ul>
+                                         <li>Vehicle Age: ${pred.factors?.vehicle_age_days || 'N/A'} days</li>
+                                         <li>Days Since Last Maintenance: ${pred.factors?.days_since_maintenance || 'N/A'} days</li>
+                                         <li>Average Daily Usage: ${pred.factors?.avg_daily_usage_km || 'N/A'} km</li>
+                                         <li>GPS Points Last Week: ${pred.factors?.gps_points_last_week || 'N/A'}</li>
+                                         <li>Total Maintenance Count: ${pred.factors?.maintenance_count || 'N/A'}</li>
+                                     </ul>
+                                </div>
+                            </div>
+                        `);
+                    } else {
+                        showResults('Prediction Failed', `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Prediction Failed:</strong> ${data.message}
+                            </div>
+                        `);
+                    }
+                })
+                .catch(error => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-search"></i> Predict Maintenance';
+                    showResults('Error', `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Server Error:</strong> Make sure the Python ML server is running.
+                        </div>
+                    `);
+                });
+        }
+        
+        function getUrgencyColor(level) {
+            switch(level) {
+                case 'CRITICAL': return 'danger';
+                case 'HIGH': return 'warning';
+                case 'MEDIUM': return 'info';
+                case 'LOW': return 'success';
+                default: return 'secondary';
+            }
+        }
+        
+        function showResults(title, content) {
+            document.getElementById('resultsContent').innerHTML = `
+                <h5>${title}</h5>
+                ${content}
+            `;
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        // Auto-train model function
+        function autoTrainModel() {
+            console.log('Auto-training model...');
+            const btn = document.getElementById('trainBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Auto-Training...';
+            
+            fetch(`${PYTHON_SERVER_URL}/train`, { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play"></i> Train Python ML Model';
+                    
+                    if (data.success) {
+                        console.log('Auto-training successful');
+                        document.getElementById('modelAccuracy').textContent = data.training_stats.accuracy + '%';
+                        document.getElementById('modelStatus').innerHTML = '<span class="text-success">✅ Trained</span>';
+                        // Load vehicles after successful training
+                        loadAllVehicles();
+                    } else {
+                        console.log('Auto-training failed:', data.message);
+                        // Still try to load vehicles even if training failed
+                        loadAllVehicles();
+                    }
+                })
+                .catch(error => {
+                    console.log('Auto-training error:', error);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-play"></i> Train Python ML Model';
+                    // Still try to load vehicles
+                    loadAllVehicles();
+                });
+        }
+
+        // Load all vehicles and their predictions
+        function loadAllVehicles() {
+            fetch(`${PYTHON_SERVER_URL}/predict_all`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        populateVehiclesTable(data.data);
+                    } else {
+                        // Fallback: try to get vehicles from database
+                        loadVehiclesFromDatabase();
+                    }
+                })
+                .catch(error => {
+                    console.log('Error loading predictions:', error);
+                    // Fallback: try to get vehicles from database
+                    loadVehiclesFromDatabase();
+                });
+        }
+
+        // Fallback function to load vehicles from database
+        function loadVehiclesFromDatabase() {
+            // This would need a database endpoint, for now we'll show a message
+            document.getElementById('vehiclesTableBody').innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Unable to load vehicles. Please check server connection.
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Populate the vehicles table
+        function populateVehiclesTable(predictions) {
+            const tbody = document.getElementById('vehiclesTableBody');
+            
+            if (!predictions || predictions.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            <i class="fas fa-info-circle"></i> No vehicles found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            predictions.forEach(pred => {
+                const urgencyColor = getUrgencyColor(pred.urgency_level);
+                
+                html += `
+                    <tr>
+                        <td>${pred.vehicle_id}</td>
+                        <td>${pred.vehicle_name}</td>
+                        <td>${pred.plate_number}</td>
+                        <td><span class="badge bg-${urgencyColor}">${pred.urgency_level}</span></td>
+                        <td>${pred.days_until_maintenance}</td>
+                        <td>${pred.next_maintenance_date}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewVehicleDetails(${pred.vehicle_id})">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // Get urgency CSS class
+        function getUrgencyColor(urgency_level) {
+            switch (urgency_level) {
+                case 'CRITICAL': return 'danger';
+                case 'HIGH': return 'warning';
+                case 'MEDIUM': return 'info';
+                case 'LOW': return 'success';
+                default: return 'secondary';
+            }
+        }
+
+        // Predict all vehicles function
+        function predictAllVehicles() {
+            const btn = document.getElementById('predictAllBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            
+            loadAllVehicles();
+            
+            // Re-enable button after a delay
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh All Predictions';
+            }, 2000);
+        }
+
+        // View vehicle details function
+        function viewVehicleDetails(vehicleId) {
+            console.log(`Fetching details for vehicle ${vehicleId}...`);
+            console.log(`URL: ${PYTHON_SERVER_URL}/predict?vehicle_id=${vehicleId}`);
+            
+            fetch(`${PYTHON_SERVER_URL}/predict?vehicle_id=${vehicleId}`)
+                .then(response => {
+                    console.log('Response received:', response);
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Data parsed:', data);
+                    if (data.success) {
+                        const pred = data.data;
+                        showResults(`Vehicle ${vehicleId} Details`, `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                <strong>Vehicle Information</strong>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Vehicle Details</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>ID:</strong> ${pred.vehicle_id}</li>
+                                        <li><strong>Name:</strong> ${pred.vehicle_name}</li>
+                                        <li><strong>Plate:</strong> ${pred.plate_number}</li>
+                                                                                 <li><strong>Total KM:</strong> ${pred.total_km_traveled || (pred.factors && pred.factors.avg_daily_usage_km ? Math.round(pred.factors.avg_daily_usage_km * 30) : 'N/A')} km</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Maintenance Prediction</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>Urgency:</strong> <span class="badge bg-${getUrgencyColor(pred.urgency_level || pred.status)}">${pred.urgency_level || pred.status || 'N/A'}</span></li>
+                                        <li><strong>Days Until:</strong> ${pred.days_until_maintenance}</li>
+                                        <li><strong>Next Date:</strong> ${pred.next_maintenance_date}</li>
+                                        <li><strong>Confidence:</strong> ${pred.confidence}%</li>
+                                    </ul>
+                                </div>
+                            </div>
+                                                         <div class="alert alert-info">
+                                 <i class="fas fa-tools"></i>
+                                 <strong>Recommended Maintenance:</strong> ${pred.recommended_maintenance || 'CHANGE OIL'}
+                             </div>
+                            <div class="alert alert-light">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Action:</strong> ${pred.action || 'Monitor vehicle condition'}
+                            </div>
+                        `);
+                    } else {
+                        showResults('Error', `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Error:</strong> ${data.message}
+                            </div>
+                        `);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    console.error('Error name:', error.name);
+                    console.error('Error message:', error.message);
+                    showResults('Error', `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Server Error:</strong> Unable to fetch vehicle details.<br>
+                            <small>Error: ${error.message}</small>
+                        </div>
+                    `);
+                });
+        }
+        
+        // Test API function for debugging
+        function testAPI() {
+            console.log('Testing API connection...');
+            console.log('PYTHON_SERVER_URL:', PYTHON_SERVER_URL);
+            
+            // Test 1: Simple fetch to status endpoint
+            fetch(`${PYTHON_SERVER_URL}/status`)
+                .then(response => {
+                    console.log('✅ Status endpoint response:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ Status endpoint data:', data);
+                })
+                .catch(error => {
+                    console.error('❌ Status endpoint error:', error);
+                });
+            
+            // Test 2: Test vehicle prediction endpoint
+            fetch(`${PYTHON_SERVER_URL}/predict?vehicle_id=9`)
+                .then(response => {
+                    console.log('✅ Predict endpoint response:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('✅ Predict endpoint data:', data);
+                })
+                .catch(error => {
+                    console.error('❌ Predict endpoint error:', error);
+                });
+        }
+    </script>
+</body>
+</html>

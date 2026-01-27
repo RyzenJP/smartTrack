@@ -1,0 +1,44 @@
+# Cache directory
+cache/
+*.cache
+tests/cache_test/
+
+# Logs
+*.log
+security.log
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Backup files
+database_backups/*.sql
+
+# Test files
+tests/coverage/
+tests/testdox.html
+tests/testdox.txt
+tests/junit.xml
+.phpunit.result.cache
+coverage.xml
+
+# Dependencies
+vendor/
+**/node_modules/
+composer.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/

@@ -1,0 +1,10 @@
+[
+    {
+        "timestamp": "2025-10-29 05:11:44",
+        "device_id": "MOBILE-001",
+        "latitude": 10.5305239,
+        "longitude": 122.8426807,
+        "speed": 25.5,
+        "battery_level": 0.8
+    }
+]

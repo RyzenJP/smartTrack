@@ -1,0 +1,14 @@
+# Automated Database Backup Cron Jobs
+# Add these lines to your crontab (crontab -e)
+
+# Daily backup at 2 AM
+0 2 * * * /usr/bin/php C:\xampp\htdocs\trackingv2\trackingv2/auto_backup_scheduler.php run
+
+# Weekly full backup on Sunday at 3 AM
+0 3 * * 0 /usr/bin/php C:\xampp\htdocs\trackingv2\trackingv2/auto_backup_scheduler.php run
+
+# Clean old backups monthly (1st of month at 4 AM)
+0 4 1 * * /usr/bin/php C:\xampp\htdocs\trackingv2\trackingv2/auto_backup_scheduler.php run
+
+# For Windows Task Scheduler, use:
+# php.exe C:\xampp\htdocs\trackingv2\trackingv2\auto_backup_scheduler.php run

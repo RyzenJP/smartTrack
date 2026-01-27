@@ -1,0 +1,288 @@
+================================================================================
+                    SMART TRACK SYSTEM - REPORTS DOCUMENTATION
+================================================================================
+
+This document explains all charts, calculations, and data sources for both
+Super Admin and Motorpool Admin reports in the Smart Track System.
+
+================================================================================
+                            SUPER ADMIN REPORTS
+================================================================================
+
+1. 📈 SUMMARY STATISTICS CARDS
+   Data Source: get_summary API
+   Calculations:
+   - Total Vehicles: Count of all vehicles (excluding synthetic ones)
+   - Active Vehicles: Count of vehicles with status 'active' or NULL
+   - Total Drivers: Count of users with role 'Driver'
+   - GPS Devices: Count of distinct GPS devices linked to vehicles
+   - Active Geofences: Count of geofences with status 'active'
+   - Recent Events: Count of geofence events in selected date range
+
+2. 🥧 VEHICLE DISTRIBUTION CHART (Pie Chart)
+   Data Source: get_vehicle_distribution API
+   SQL Query:
+   SELECT v.article as type, COUNT(*) as count
+   FROM fleet_vehicles v
+   WHERE v.article NOT LIKE 'Synthetic%' 
+   GROUP BY v.article
+   Shows: Distribution of vehicle types (Ambulance, Truck, Van, etc.)
+
+3. 📊 VEHICLE ACTIVITY CHART (Bar Chart)
+   Data Source: get_vehicle_activity API
+   Complex Activity Score Calculation:
+   LEAST(100, 
+       -- GPS activity (50% weight) - based on recent GPS logs
+       (LEAST(100, (COALESCE(gps_logs.recent_points, 0) / 20) * 100) * 0.5) +
+       -- Geofence activity (30% weight) - based on recent geofence events
+       (LEAST(100, (COALESCE(geofence_events.recent_events, 0) / 10) * 100) * 0.3) +
+       -- Speed activity (20% weight) - based on current speed
+       (LEAST(100, (COALESCE(gd.speed, 0) / 60) * 100) * 0.2)
+   ) as activity_score
+   Shows: Vehicle activity score (0-100) based on GPS points, geofence events, and speed
+
+4. 🛣️ DISTANCE TRAVELED CHART (Bar Chart)
+   Data Source: get_distance_trend API
+   Calculation: ROUND(COUNT(*) * 0.1, 2) as distance_km
+   Formula: GPS Points × 0.1 km = Estimated Distance
+   Assumption: Each GPS point represents ~0.1 km (30-second intervals at 12 km/h)
+
+5. 🔧 MAINTENANCE STATUS CHART (Doughnut Chart)
+   Data Source: get_maintenance_status API
+   Calculation:
+   CASE 
+       WHEN v.status = 'active' OR v.status IS NULL THEN 'Active'
+       WHEN v.status = 'maintenance' THEN 'In Maintenance'
+       WHEN v.status = 'out_of_service' THEN 'Out of Service'
+       ELSE 'Unknown'
+   END as status
+   Shows: Vehicle status distribution
+
+6. 🚨 GEOFENCE EVENTS CHART (Bar Chart)
+   Data Source: get_driver_performance API
+   Calculation:
+   SELECT g.name as geofence_name,
+          COUNT(ge.id) as event_count,
+          SUM(CASE WHEN ge.event_type = 'entry' THEN 1 ELSE 0 END) as entries,
+          SUM(CASE WHEN ge.event_type = 'exit' THEN 1 ELSE 0 END) as exits
+   FROM geofences g
+   LEFT JOIN geofence_events ge ON g.id = ge.geofence_id
+   GROUP BY g.id, g.name
+   Shows: Geofence activity (entries/exits) by geofence name
+
+7. ⛽ FUEL EFFICIENCY CALCULATIONS
+   Multiple Charts Use This:
+   Vehicle-Specific Fuel Rates:
+   - Ambulance: 0.12 L/km (8.3 km/L)
+   - Truck/Bus: 0.20 L/km (5.0 km/L)
+   - Van/SUV: 0.14 L/km (7.0 km/L)
+   - Service Vehicle: 0.15 L/km (6.7 km/L)
+   - Sedan/Car: 0.10 L/km (10.0 km/L)
+
+   Dynamic Fuel Efficiency Formula:
+   CASE 
+       WHEN v.article LIKE '%Ambulance%' THEN 
+           GREATEST(5, ROUND(8.3 - (AVG(speed) * 0.04) - (COUNT(trips) * 0.008), 1))
+       -- Similar calculations for other vehicle types
+   END as estimated_km_per_liter
+
+8. 📍 VEHICLE LOCATIONS MAP
+   Data Source: get_vehicle_locations API
+   Shows: Real-time vehicle positions with speed and driver information
+
+================================================================================
+                          MOTORPOOL ADMIN REPORTS
+================================================================================
+
+1. 📈 SUMMARY STATISTICS CARDS
+   Data Source: get_summary API
+   Additional Calculations (vs Super Admin):
+   - Maintenance Due: Count of vehicles with maintenance status or emergency maintenance requests
+   - Fleet Utilization: (Active Vehicles / Total Vehicles) × 100
+   - Recent Events: Geofence events in selected date range
+   - GPS Devices: Count of distinct GPS devices linked to vehicles
+
+2. 🍩 FLEET COMPOSITION CHART (Doughnut Chart)
+   Data Source: get_vehicle_distribution API
+   Calculation:
+   SELECT v.article as type, COUNT(*) as count
+   FROM fleet_vehicles v
+   WHERE v.article NOT LIKE 'Synthetic%' 
+   GROUP BY v.article
+   Shows: Distribution of vehicle types (Ambulance, Truck, Van, etc.)
+
+3. 📊 MAINTENANCE STATUS CHART (Bar Chart)
+   Data Source: get_maintenance_status API
+   Calculation:
+   CASE 
+       WHEN v.status = 'active' OR v.status IS NULL THEN 'Active'
+       WHEN v.status = 'maintenance' THEN 'In Maintenance'
+       WHEN v.status = 'out_of_service' THEN 'Out of Service'
+       ELSE 'Unknown'
+   END as status
+   Shows: Vehicle status distribution
+
+4. 📈 FLEET ACTIVITY TIMELINE CHART (Line Chart)
+   Data Source: get_fleet_activity_timeline API
+   Complex Daily Activity Score Calculation:
+   LEAST(100, 
+       -- Vehicle activity (40% weight) - based on active vehicles
+       (LEAST(100, (COUNT(DISTINCT gd.vehicle_id) / 10) * 100) * 0.4) +
+       -- GPS activity (30% weight) - based on GPS points
+       (LEAST(100, (COUNT(gl.id) / 1000) * 100) * 0.3) +
+       -- Speed activity (20% weight) - based on average speed
+       (LEAST(100, (AVG(COALESCE(gd.speed, 0)) / 50) * 100) * 0.2) +
+       -- Geofence activity (10% weight) - based on geofence events
+       (LEAST(100, (COUNT(ge.id) / 50) * 100) * 0.1)
+   ) as activity_score
+   Shows: Daily fleet activity trends over time with multiple metrics
+
+5. ⛽ FUEL CONSUMPTION CHART (Bar Chart)
+   Data Source: get_distance_trend API
+   Calculation: ROUND(COUNT(*) * 0.1, 2) as distance_km
+   Then: distance_km × fuel_rate = estimated_fuel_liters
+   Fuel Rates by Vehicle Type:
+   - Ambulance: 0.12 L/km (8.3 km/L)
+   - Truck/Bus: 0.20 L/km (5.0 km/L)
+   - Van/SUV: 0.14 L/km (7.0 km/L)
+   - Service Vehicle: 0.15 L/km (6.7 km/L)
+   - Sedan/Car: 0.10 L/km (10.0 km/L)
+
+6. 📈 FUEL EFFICIENCY TRENDS CHART (Line Chart)
+   Data Source: get_fuel_efficiency API
+   Dynamic Fuel Efficiency Formula:
+   CASE 
+       WHEN v.article LIKE '%Ambulance%' THEN 
+           GREATEST(5, ROUND(8.3 - (AVG(speed) * 0.04) - (COUNT(trips) * 0.008), 1))
+       WHEN v.article LIKE '%Truck%' OR v.article LIKE '%Bus%' THEN 
+           GREATEST(3, ROUND(5.0 - (AVG(speed) * 0.025) - (COUNT(trips) * 0.005), 1))
+       -- Similar calculations for other vehicle types
+   END as estimated_km_per_liter
+   Shows: Fuel efficiency trends over time by vehicle type
+
+7. 💰 EMERGENCY MAINTENANCE COSTING CHART (Bar Chart)
+   Data Source: get_maintenance_cost_analysis API
+   Calculation:
+   SELECT 
+       CASE 
+           WHEN em.urgency_level = 'CRITICAL' THEN 'Critical Repairs'
+           WHEN em.urgency_level = 'HIGH' THEN 'High Priority'
+           WHEN em.urgency_level = 'MEDIUM' THEN 'Medium Priority'
+           WHEN em.urgency_level = 'LOW' THEN 'Low Priority'
+           ELSE 'General Maintenance'
+       END as category,
+       COUNT(*) as count,
+       COALESCE(SUM(em.actual_cost), 0) as actual_cost,
+       COALESCE(SUM(em.estimated_cost), 0) as estimated_cost
+   FROM emergency_maintenance em
+   GROUP BY em.urgency_level
+   Shows: Maintenance costs by priority level (Actual vs Estimated)
+
+8. 🚨 FLEET ALERTS TABLE
+   Data Source: get_fleet_alerts API
+   Combines Multiple Alert Types:
+   - Geofence Events: Entry/exit alerts
+   - Emergency Maintenance: Critical maintenance requests
+   - Vehicle Issues: Status-based alerts
+   Priority Calculation:
+   CASE 
+       WHEN ge.event_type = 'exit' THEN 'High'
+       WHEN ge.event_type = 'entry' THEN 'Low'
+       ELSE 'Medium'
+   END as priority
+
+================================================================================
+                            KEY FEATURES
+================================================================================
+
+REAL-TIME UPDATES:
+- Charts refresh every 5 seconds
+- Live data from GPS logs and geofence events
+- Real-time vehicle locations and status
+
+FILTERING CAPABILITIES:
+- Date Range: 7, 30, 90, 365 days, or custom range
+- Vehicle Type: Filter by specific vehicle types
+- Driver: Filter by specific drivers
+- All filters work across all charts
+
+DATA ACCURACY:
+- GPS Data: Based on actual GPS logs from gps_logs table
+- Distance: Estimated using GPS point density (0.1 km per point)
+- Fuel Consumption: Calculated using vehicle-specific rates
+- Activity Scores: Weighted combination of GPS, geofence, and speed data
+- Maintenance Costs: Real data from emergency_maintenance table
+
+RESPONSIVE DESIGN:
+- Charts adapt to screen size
+- Mobile-friendly interface
+- Interactive hover effects and tooltips
+
+ERROR HANDLING:
+- Graceful handling of database errors
+- Fallback data when no real data available
+- Empty state messages for missing data
+
+================================================================================
+                        DIFFERENCES BETWEEN ROLES
+================================================================================
+
+SUPER ADMIN REPORTS:
+- System-wide overview
+- All vehicles and drivers
+- Geofence management focus
+- High-level analytics
+- User management insights
+
+MOTORPOOL ADMIN REPORTS:
+- Fleet management focus
+- Detailed maintenance cost analysis
+- Timeline view of fleet activity
+- Emergency maintenance tracking
+- Fleet utilization metrics
+- Resource optimization insights
+
+================================================================================
+                            TECHNICAL DETAILS
+================================================================================
+
+DATABASE TABLES USED:
+- fleet_vehicles: Vehicle information and status
+- gps_devices: GPS device data and locations
+- gps_logs: Historical GPS tracking data
+- geofences: Geofence definitions
+- geofence_events: Geofence entry/exit events
+- user_table: Driver and user information
+- vehicle_assignments: Vehicle-driver assignments
+- emergency_maintenance: Maintenance requests and costs
+
+API ENDPOINTS:
+- reports_api.php: Super Admin reports API
+- motorpool_admin/reports_api.php: Motorpool Admin reports API
+- All endpoints support filtering and real-time updates
+
+CHART LIBRARIES:
+- Chart.js for all chart visualizations
+- Responsive design with Bootstrap 5
+- Font Awesome icons for visual elements
+
+================================================================================
+                              CONCLUSION
+================================================================================
+
+Both Super Admin and Motorpool Admin reports provide comprehensive insights
+into the Smart Track System's fleet management capabilities. The calculations
+are based on real database queries with proper filtering and aggregation,
+ensuring accurate and up-to-date information for effective fleet management
+and decision-making.
+
+The system supports real-time monitoring, historical analysis, and predictive
+insights through sophisticated algorithms that combine GPS data, geofence
+events, speed patterns, and maintenance records to provide actionable
+intelligence for fleet operations.
+
+================================================================================
+Generated: 2025-01-29
+System: Smart Track Fleet Management System
+Version: 2.0
+================================================================================
